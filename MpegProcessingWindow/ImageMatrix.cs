@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JpegProcessingConsole {
+namespace MpegProcessingWindow {
     public class ImageMatrix {
         private const int SUBMATRIX_SIZE = 8;
         private byte[,] _yMatrix;
@@ -42,27 +42,6 @@ namespace JpegProcessingConsole {
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
                     YCbCrPixel p = matrix[x, y].ToYCrCb();
-                    _yMatrix[x, y] = p.Y;
-                    cbMatrix[x, y] = p.Cb;
-                    crMatrix[x, y] = p.Cr;
-                }
-            }
-
-            _cbMatrix = SubsampleMatrix(cbMatrix);
-            _crMatrix = SubsampleMatrix(crMatrix);
-        }
-
-        public ImageMatrix(byte[] src, int width, int height, int bytesPerPixel) {
-            _yMatrix = new byte[width, height];
-            byte[,] cbMatrix = new byte[width, height];
-            byte[,] crMatrix = new byte[width, height];
-
-            for (int x = 0; x < width; x++) {
-                for (int y = 0; y < height; y++) {
-                    byte b = src[(y * width + x) * bytesPerPixel];
-                    byte g = src[(y * width + x) * bytesPerPixel + 1];
-                    byte r = src[(y * width + x) * bytesPerPixel + 2];
-                    YCbCrPixel p = new RGBAPixel(r, g, b, 255).ToYCrCb();
                     _yMatrix[x, y] = p.Y;
                     cbMatrix[x, y] = p.Cb;
                     crMatrix[x, y] = p.Cr;

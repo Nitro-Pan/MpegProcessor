@@ -1,15 +1,26 @@
 ﻿using JpegProcessingConsole;
 
 // See https://aka.ms/new-console-template for more information
+//int[,] image = {
+//    { 1, 2, 3, 5, 8, 13, 21, 34 },
+//    { 1, 2, 3, 5, 8, 13, 21, 34 },
+//    { 1, 2, 3, 5, 8, 13, 21, 34 },
+//    { 1, 2, 3, 5, 8, 13, 21, 34 },
+//    { 1, 2, 3, 5, 8, 13, 21, 34 },
+//    { 1, 2, 3, 5, 8, 13, 21, 34 },
+//    { 1, 2, 3, 5, 8, 13, 21, 34 },
+//    { 1, 2, 3, 5, 8, 13, 21, 34 },
+//};
+
 int[,] image = {
-    { 1, 2, 3, 5, 8, 13, 21, 34 },
-    { 1, 2, 3, 5, 8, 13, 21, 34 },
-    { 1, 2, 3, 5, 8, 13, 21, 34 },
-    { 1, 2, 3, 5, 8, 13, 21, 34 },
-    { 1, 2, 3, 5, 8, 13, 21, 34 },
-    { 1, 2, 3, 5, 8, 13, 21, 34 },
-    { 1, 2, 3, 5, 8, 13, 21, 34 },
-    { 1, 2, 3, 5, 8, 13, 21, 34 },
+    { 1, 1, 1, 1, 1, 1, 1, 1 },
+    { 2, 2, 2, 2, 2, 2, 2, 2 },
+    { 3, 3, 3, 3, 3, 3, 3, 3 },
+    { 5, 5, 5, 5, 5, 5, 5, 5 },
+    { 8, 8, 8, 8, 8, 8, 8, 8 },
+    { 13, 13, 13, 13, 13, 13, 13, 13 },
+    { 21, 21, 21, 21, 21, 21, 21, 21 },
+    { 34, 34, 34, 34, 34, 34, 34, 34 },
 };
 
 float[,] result = new float[image.GetLength(0), image.GetLength(1)];
@@ -33,7 +44,16 @@ for (int x = 0; x < originalMaybe.GetLength(0); x++) {
     }
 }
 
-
-for (int x = 0; x < 256; x++) {
-    Console.WriteLine(new YCbCrPixel(new RGBAPixel((byte)x, (byte)x, (byte)x, 255)));
+for (int x = 0; x < originalMaybe.GetLength(0); x++)
+{
+    for (int y = 0; y < originalMaybe.GetLength(0); y++)
+    {
+        Console.Write($"{notReallyAnImage[x, y]}, ");
+    }
+    Console.Write("\n");
 }
+
+
+//for (int x = 0; x < 256; x++) {
+//    Console.WriteLine(new YCbCrPixel(new RGBAPixel((byte)x, (byte)x, (byte)x, 255)));
+//}
