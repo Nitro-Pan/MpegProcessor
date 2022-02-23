@@ -31,7 +31,8 @@ namespace MpegProcessingWindow
             }
         }
 
-        public RGBAPixel[,] ConvertToMatrix(BitmapSource bmp) {
+        //move this somewhere else
+        public static RGBAPixel[,] ConvertToMatrix(BitmapSource bmp) {
             int bytesPerPixel = (bmp.Format.BitsPerPixel + 7) / 8;
             int stride = bytesPerPixel * bmp.PixelWidth;
             int totalBytes = stride * bmp.PixelHeight;

@@ -28,7 +28,8 @@ namespace MpegProcessingWindow
 
         private void OpenButton_Click(object sender, RoutedEventArgs e) {
             c.LoadImage(OriginalImage);
-            c.ConvertToMatrix();
+            RGBAPixel[,] p = MainWindowController.ConvertToMatrix(c.srcImg);
+            ImageMatrix matrix = new(p);
         }
     }
 }
