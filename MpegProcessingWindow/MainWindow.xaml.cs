@@ -30,6 +30,8 @@ namespace MpegProcessingWindow
             c.LoadImage(OriginalImage);
             RGBAPixel[,] p = MainWindowController.ConvertToMatrix(c.srcImg);
             ImageMatrix matrix = new(p);
+            ImageJPEG jpeg = new(matrix);
+            ResultImage.Source = jpeg.GetBitmap();
         }
     }
 }

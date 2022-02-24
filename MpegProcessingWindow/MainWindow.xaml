@@ -15,8 +15,12 @@
             </MenuItem>
         </Menu>
         <Grid Name="ImageGrid">
-            <Image Name="OriginalImage"></Image>
-            <Image Name="ResultImage"></Image>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Image Name="OriginalImage" Grid.Column="0"></Image>
+            <Image Name="ResultImage" Grid.Column="1"></Image>
         </Grid>
     </Grid>
 </Window>

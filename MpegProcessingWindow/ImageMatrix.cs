@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MpegProcessingWindow {
-    public class ImageMatrix {
+namespace MpegProcessingWindow
+{
+    public class ImageMatrix
+    {
         private const int SUBMATRIX_SIZE = 8;
         private byte[,] _yMatrix;
         private byte[,] _cbMatrix;
@@ -16,21 +18,12 @@ namespace MpegProcessingWindow {
             private set { _yMatrix = value; }
         }
 
-        public int yhLength { 
-            get { return _yMatrix.GetLength(0); }
-        }
+        public int yhLength { get { return _yMatrix.GetLength(0); } }
 
-        public int yvLength {
-            get { return _yMatrix.GetLength(1); }
-        }
+        public int yvLength { get { return _yMatrix.GetLength(1); } }
 
-        public int hSubMatrices { 
-            get { return _yMatrix.GetLength(1) / SUBMATRIX_SIZE; }
-        }
-
-        public int vSubMatrices {
-            get { return _yMatrix.GetLength(0) / SUBMATRIX_SIZE; }
-        }
+        public int hSubMatrices { get { return _yMatrix.GetLength(1) / SUBMATRIX_SIZE; } }
+        public int vSubMatrices { get { return _yMatrix.GetLength(0) / SUBMATRIX_SIZE; } }
 
         public ImageMatrix(RGBAPixel[,] matrix) {
             int width = matrix.GetLength(0);
@@ -42,6 +35,27 @@ namespace MpegProcessingWindow {
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
                     YCbCrPixel p = matrix[x, y].ToYCrCb();
+                    _yMatrix[x, y] = p.Y;
+                    cbMatrix[x, y] = p.Cb;
+                    crMatrix[x, y] = p.Cr;
+                }
+            }
+
+            _cbMatrix = SubsampleMatrix(cbMatrix);
+            _crMatrix = SubsampleMatrix(crMatrix);
+        }
+
+        public ImageMatrix(byte[] src, int width, int height, int bytesPerPixel) {
+            _yMatrix = new byte[width, height];
+            byte[,] cbMatrix = new byte[width, height];
+            byte[,] crMatrix = new byte[width, height];
+
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    byte b = src[(y * width + x) * bytesPerPixel];
+                    byte g = src[(y * width + x) * bytesPerPixel + 1];
+                    byte r = src[(y * width + x) * bytesPerPixel + 2];
+                    YCbCrPixel p = new RGBAPixel(r, g, b, 255).ToYCrCb();
                     _yMatrix[x, y] = p.Y;
                     cbMatrix[x, y] = p.Cb;
                     crMatrix[x, y] = p.Cr;
@@ -72,7 +86,7 @@ namespace MpegProcessingWindow {
             return subMatrix;
         }
 
-        public YCbCrPixel[,] GetExpandedYCrCbImage() { 
+        public YCbCrPixel[,] GetExpandedYCrCbImage() {
             YCbCrPixel[,] result = new YCbCrPixel[yhLength, yvLength];
             byte[,] expandedCr = ExpandSubsampleMatrix(_crMatrix);
             byte[,] expandedCb = ExpandSubsampleMatrix(_cbMatrix);
@@ -84,7 +98,7 @@ namespace MpegProcessingWindow {
             return result;
         }
 
-        public RGBAPixel[,] GetExpandedRGBAImage() { 
+        public RGBAPixel[,] GetExpandedRGBAImage() {
             RGBAPixel[,] result = new RGBAPixel[yhLength, yvLength];
             byte[,] expandedCr = ExpandSubsampleMatrix(_crMatrix);
             byte[,] expandedCb = ExpandSubsampleMatrix(_cbMatrix);
@@ -100,8 +114,8 @@ namespace MpegProcessingWindow {
             return (_yMatrix, _cbMatrix, _crMatrix);
         }
 
-        private byte[,] SubsampleMatrix(byte[,] matrix) { 
-            byte[,] subMatrix = new byte[matrix.GetLength(0) / 2, matrix.GetLength(1) / 2];
+        private byte[,] SubsampleMatrix(byte[,] matrix) {
+            byte[,] subMatrix = new byte[matrix.GetLength(0) / 2 + (matrix.GetLength(0) & 1), matrix.GetLength(1) / 2 + (matrix.GetLength(1) & 1)];
             for (int x = 0; x < subMatrix.GetLength(0); x++) {
                 for (int y = 0; y < subMatrix.GetLength(1); y++) {
                     subMatrix[x, y] = matrix[x * 2, y * 2];
