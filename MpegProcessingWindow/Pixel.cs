@@ -12,7 +12,7 @@ namespace MpegProcessingWindow {
         public byte B { get; private set; }
         public byte A { get; private set; }
 
-        public RGBAPixel(byte R, byte G, byte B, byte A) {
+        public RGBAPixel(byte R, byte G, byte B, byte A = byte.MaxValue) {
             this.R = R;
             this.G = G;
             this.B = B;
@@ -28,10 +28,10 @@ namespace MpegProcessingWindow {
         }
 
         public YCbCrPixel ToYCrCb() {
-            byte Y = (byte) Math.Clamp((0.299 * R) + (0.587 * G) + (0.114 * B) + 0.5, 0, 255);
-            byte Cb = (byte) Math.Clamp(128 - (0.168736 * R) - (0.331264 * G) + (0.5 * B) + 0.5, 0, 255);
-            byte Cr = (byte) Math.Clamp(128 + (0.5 * R) - (0.418688 * G) - (0.081312 * B) + 0.5, 0, 255);
-            return new(Y, Cr, Cb);
+            byte Y = (byte) (16 + ((65.738 * R) / 256) + ((129.057 * G) / 256) + ((25.064 * B) / 256) + 0.5); // Math.Round((0.299f * R) + (0.587f * G) + (0.114f * B));
+            byte Cb = (byte) (128 - ((37.945 * R) / 256) - ((74.494 * G) / 256) + ((112.439 * B) / 256) + 0.5); // Math.Round(128 - (0.168736f * R) - (0.331264f * G) + (0.5f * B));
+            byte Cr = (byte) (128 + ((112.439 * R) / 256) - ((94.154 * G) / 256) - ((18.285 * B) / 256) + 0.5); // Math.Round(128 + (0.5f * R) - (0.418688f * G) - (0.081312f * B));
+            return new(Y, Cb, Cr);
         }
 
         public override string ToString() {
@@ -59,10 +59,12 @@ namespace MpegProcessingWindow {
         }
 
         public RGBAPixel ToRGBA() {
-            byte R = (byte) Math.Clamp(Y + 1.402 * (Cr - 128) + 0.5, 0, 255);
-            byte G = (byte) Math.Clamp(Y - 0.344136 * (Cb - 128) - 0.714136 * (Cr - 128) + 0.5, 0, 255);
-            byte B = (byte) Math.Clamp(Y + 1.772 * (Cb - 128) + 0.5, 0, 255);
-            return new(R, G, B, 255);
+            int Cr = this.Cr - 128;
+            int Cb = this.Cb - 128;
+            byte R = (byte) Math.Clamp(Y + 1.402f * Cr, byte.MinValue, byte.MaxValue);
+            byte G = (byte) Math.Clamp(Y - 0.344136f * Cb - 0.714136f * Cr, byte.MinValue, byte.MaxValue);
+            byte B = (byte) Math.Clamp(Y + 1.772f * Cb, byte.MinValue, byte.MaxValue);
+            return new(R, G, B);
         }
 
         public override string ToString() {

@@ -55,7 +55,7 @@ namespace MpegProcessingWindow
                     byte b = src[(y * width + x) * bytesPerPixel];
                     byte g = src[(y * width + x) * bytesPerPixel + 1];
                     byte r = src[(y * width + x) * bytesPerPixel + 2];
-                    YCbCrPixel p = new RGBAPixel(r, g, b, 255).ToYCrCb();
+                    YCbCrPixel p = new RGBAPixel(r, g, b).ToYCrCb();
                     _yMatrix[x, y] = p.Y;
                     cbMatrix[x, y] = p.Cb;
                     crMatrix[x, y] = p.Cr;
@@ -104,7 +104,7 @@ namespace MpegProcessingWindow
             byte[,] expandedCb = ExpandSubsampleMatrix(_cbMatrix);
             for (int x = 0; x < yhLength; x++) {
                 for (int y = 0; y < yvLength; y++) {
-                    result[x, y] = new(new(_yMatrix[x, y], expandedCb[x, y], expandedCr[x, y]));
+                    result[x, y] = new YCbCrPixel(_yMatrix[x, y], expandedCb[x, y], expandedCr[x, y]).ToRGBA();
                 }
             }
             return result;

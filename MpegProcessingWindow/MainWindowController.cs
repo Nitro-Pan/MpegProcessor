@@ -23,7 +23,7 @@ namespace MpegProcessingWindow
 
         public void LoadImage(Image target) {
             OpenFileDialog files = new();
-            files.Filter = "3FR Files | *.3FR";
+            files.Filter = "BMP Files | *.bmp";
             if (files?.ShowDialog() ?? false) {
                 BitmapSource bmp = new BitmapImage(new(files.FileName));
                 srcImg = bmp;

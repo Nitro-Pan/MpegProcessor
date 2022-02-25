@@ -43,9 +43,9 @@ namespace MpegProcessingWindow {
 
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
-                    pixels[(y * width + x) * bytesPerPixel + 0] = sourcePixels[x, y].R;
+                    pixels[(y * width + x) * bytesPerPixel + 0] = sourcePixels[x, y].B;
                     pixels[(y * width + x) * bytesPerPixel + 1] = sourcePixels[x, y].G;
-                    pixels[(y * width + x) * bytesPerPixel + 2] = sourcePixels[x, y].B;
+                    pixels[(y * width + x) * bytesPerPixel + 2] = sourcePixels[x, y].R;
                     pixels[(y * width + x) * bytesPerPixel + 3] = sourcePixels[x, y].A;
                 }
             }
