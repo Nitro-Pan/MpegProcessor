@@ -13,6 +13,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.IO;
+using Microsoft.Win32;
 
 namespace MpegProcessingWindow
 {
@@ -47,6 +49,26 @@ namespace MpegProcessingWindow
             ImageJPEG jpeg = c.jpeg.Decompress();
             Trace.WriteLine("Done!");
             ResultImage.Source = jpeg.GetBitmap();
+        }
+
+        private void SaveButton_Click(object sender, RoutedEventArgs e) {
+            byte[] jpegStream = c.jpeg.CreateByteStream();
+            SaveFileDialog files = new();
+            files.Filter = "Noodle Files | *.noodle";
+            if (files?.ShowDialog() ?? false) {
+                File.WriteAllBytes(files.FileName, jpegStream);
+            }
+        }
+
+        private void OpenCompressedButton_Click(object sender, RoutedEventArgs e) {
+            OpenFileDialog files = new();
+            files.Filter = "Noodle Files | *.noodle";
+            if (files?.ShowDialog() ?? false) {
+                byte[] stream = File.ReadAllBytes(files.FileName);
+                ImageJPEG jpeg = new(stream);
+                jpeg = jpeg.Decompress();
+                ResultImage.Source = jpeg.GetBitmap();
+            }
         }
     }
 }

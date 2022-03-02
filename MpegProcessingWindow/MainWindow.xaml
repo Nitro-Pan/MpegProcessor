@@ -15,6 +15,8 @@
             </MenuItem>
             <MenuItem Header="_Compress" Name="CompressButton" Click="CompressButton_Click"></MenuItem>
             <MenuItem Header="_Decompress" Name="DecompressButton" Click="UncompressButton_Click"></MenuItem>
+            <MenuItem Header="_Open Compressed" Name="OpenCompressButton" Click="OpenCompressedButton_Click"></MenuItem>
+            <MenuItem Header="_Save" Name="SaveButton" Click="SaveButton_Click"></MenuItem>
         </Menu>
         <Grid Name="ImageGrid">
             <Grid.ColumnDefinitions>

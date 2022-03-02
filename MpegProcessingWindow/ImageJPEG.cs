@@ -14,10 +14,16 @@ namespace MpegProcessingWindow {
         private int Height { get { return matrix.YvLength; } }
         public bool IsCompressed { get; private set; }
         public const int DEFAULT_DPI = 96;
+        public const byte MRLE_KEY = 0;
+        public const int BLOCK_SIZE = 8;
 
         private float[][,] yCompressed;
         private float[][,] cbCompressed;
         private float[][,] crCompressed;
+
+        private Header head;
+
+        private byte[] byteStream;
 
         public static readonly int[,] Q_LUMINOSITY =
         {
@@ -43,9 +49,43 @@ namespace MpegProcessingWindow {
             {99, 99, 99, 99, 99, 99, 99, 99}
         };
 
+        private struct Header {
+            public int width;
+            public int height;
+            public const int BYTE_LENGTH = 8;
+
+            /// <summary>
+            /// Get the bytes of this header as big endian number and little endian text
+            /// </summary>
+            /// <returns>The bytes of this header as big endian</returns>
+            public byte[] GetBytes() {
+                byte[] b = new byte[sizeof(int) * 2];
+                for (int i = 0; i < sizeof(int); i++) {
+                    b[i] = (byte) ((width >> (BYTE_LENGTH * i)) & 0xFF);
+                }
+                for(int i = 0; i < sizeof(int); i++) {
+                    b[i + sizeof(int)] = (byte) ((height >> (BYTE_LENGTH * i)) & 0xFF);
+                }
+                return b;
+            }
+        }
+
         public ImageJPEG(ImageMatrix matrix) { 
             this.matrix = matrix;
+            head = new Header {
+                width = matrix.YhLength,
+                height = matrix.YvLength
+            };
             IsCompressed = false;
+        }
+
+        public ImageJPEG(byte[] b) {
+            var compressed = ReadByteStream(b);
+            head = compressed.Item1;
+            yCompressed = compressed.Item2;
+            cbCompressed = compressed.Item3;
+            crCompressed = compressed.Item4;
+            IsCompressed = true;
         }
 
         public void Compress() {
@@ -130,6 +170,11 @@ namespace MpegProcessingWindow {
                 }
             }
 
+            head = new Header {
+                width = matrix.YhLength,
+                height = matrix.YvLength
+            };
+
             IsCompressed = true;
         }
 
@@ -202,14 +247,16 @@ namespace MpegProcessingWindow {
                 crUncompressed[i] = RestoreToBytes(res);
             }
 
-            (byte[,], byte[,], byte[,]) fullMatrices = BuildFullMatrices(yUncompressed, cbUncompressed, crUncompressed, Width, Height);
+            (byte[,], byte[,], byte[,]) fullMatrices = BuildFullMatrices(yUncompressed, cbUncompressed, crUncompressed, yUncompressed[0].GetLength(0), yUncompressed[0].GetLength(1));
 
-            return new(new(fullMatrices.Item1, fullMatrices.Item2, fullMatrices.Item3));
+            IsCompressed = false;
+
+            return new(new ImageMatrix(fullMatrices.Item1, fullMatrices.Item2, fullMatrices.Item3));
         }
 
         private (byte[,], byte[,], byte[,]) BuildFullMatrices(byte[][,] yM, byte[][,] cbM, byte[][,] crM, int width, int height) {
-            int lWBlocks = (int) Math.Ceiling(width / 8.0f);
-            int lHBlocks = (int) Math.Ceiling(height / 8.0f);
+            int lWBlocks = (int) Math.Ceiling(width / (float) BLOCK_SIZE);
+            int lHBlocks = (int) Math.Ceiling(height / (float) BLOCK_SIZE);
             byte[,] yMatrix = new byte[width, height];
             for (int x = 0; x < lWBlocks; x++) {
                 for (int y = 0; y < lHBlocks; y++) {
@@ -217,17 +264,17 @@ namespace MpegProcessingWindow {
                     byte[,] currBlock = yM[index];
                     for (int u = 0; u < currBlock.GetLength(0); u++) {
                         for (int v = 0; v < currBlock.GetLength(1); v++) {
-                            if (x*8 + u >= width || y*8 + v >= height) break;
-                            yMatrix[x*8 + u, y*8 + v] = currBlock[u, v];
+                            if (x * BLOCK_SIZE + u >= width || y* BLOCK_SIZE + v >= height) break;
+                            yMatrix[x * BLOCK_SIZE + u, y * BLOCK_SIZE + v] = currBlock[u, v];
                         }
                     }
                 }
             }
 
             int cWidth = (width / 2);
-            int cWBlocks = (int) Math.Ceiling(cWidth / 8.0f);
+            int cWBlocks = (int) Math.Ceiling(cWidth / (float) BLOCK_SIZE);
             int cHeight = (height / 2);
-            int cHBlocks = (int)Math.Ceiling(cHeight / 8.0f);
+            int cHBlocks = (int)Math.Ceiling(cHeight / (float) BLOCK_SIZE);
 
             byte[,] cbMatrix = new byte[cWidth, cHeight];
             for (int y = 0; y < cHBlocks; y++) {
@@ -236,8 +283,8 @@ namespace MpegProcessingWindow {
                     byte[,] currBlock = cbM[index];
                     for (int u = 0; u < currBlock.GetLength(0); u++) {
                         for (int v = 0; v < currBlock.GetLength(1); v++) {
-                            if ((x*8 + u) >= cWidth || (y*8 + v) >= cHeight) break;
-                            cbMatrix[x*8 + u, y*8 + v] = currBlock[u, v];
+                            if ((x * BLOCK_SIZE + u) >= cWidth || (y * BLOCK_SIZE + v) >= cHeight) break;
+                            cbMatrix[x * BLOCK_SIZE + u, y * BLOCK_SIZE + v] = currBlock[u, v];
                         }
                     }
                 }
@@ -250,8 +297,8 @@ namespace MpegProcessingWindow {
                     byte[,] currBlock = crM[index];
                     for (int u = 0; u < currBlock.GetLength(0); u++) {
                         for (int v = 0; v < currBlock.GetLength(1); v++) {
-                            if ((x*8 + u) >= cWidth || (y*8 + v) >= cHeight) break;
-                            crMatrix[x*8 + u, y*8 + v] = currBlock[u, v];
+                            if ((x * BLOCK_SIZE + u) >= cWidth || (y * BLOCK_SIZE + v) >= cHeight) break;
+                            crMatrix[x * BLOCK_SIZE + u, y * BLOCK_SIZE + v] = currBlock[u, v];
                         }
                     }
                 }
@@ -287,11 +334,172 @@ namespace MpegProcessingWindow {
         public byte[] CreateByteStream() {
             if (!IsCompressed) throw new InvalidOperationException("JPEG must be manually compressed before saving into a byte stream");
 
-            byte[] res = new byte[1];
+            int yLength = yCompressed.Length * BLOCK_SIZE * BLOCK_SIZE;
+            int cbLength = cbCompressed.Length * BLOCK_SIZE * BLOCK_SIZE;
+            int crLength = crCompressed.Length * BLOCK_SIZE * BLOCK_SIZE;
+            byte[] run = new byte[yLength + cbLength + crLength];
+            int runIndex = 0;
+
+            foreach (float[,] arr in yCompressed) {
+                byte[] b = DeNoodle(TurnToBytes(arr));
+                for (int i = 0; i < b.Length; i++) {
+                    run[runIndex++] = b[i];
+                }
+            }
+
+            foreach (float[,] arr in cbCompressed) {
+                byte[] b = DeNoodle(TurnToBytes(arr));
+                for (int i = 0; i < b.Length; i++) {
+                    run[runIndex++] = b[i];
+                }
+            }
+
+            foreach (float[,] arr in crCompressed) {
+                byte[] b = DeNoodle(TurnToBytes(arr));
+                for (int i = 0; i < b.Length; i++) {
+                    run[runIndex++] = b[i];
+                }
+            }
+
+            List<byte> compressed = new();
+            compressed.AddRange(head.GetBytes());
+
+            for (int i = 0; i < run.Length; i++) {
+                byte r;
+                for (r = 1; i + 1 < run.Length && run[i] == run[i + 1] && r != 255; r++, i++) { }
+                if (run[i] == MRLE_KEY || r > 1) {
+                    compressed.Add(MRLE_KEY);
+                    compressed.Add(r);
+                    compressed.Add(run[i]);
+                } else { 
+                    compressed.Add(run[i]);
+                }
+            }
+
+            return compressed.ToArray();
+        }
+
+        private (Header, float[][,], float[][,], float[][,]) ReadByteStream(byte[] b) {
+            int width = 0;
+            int height = 0;
+            int index = 0;
+
+            for (int i = 0; i < sizeof(int); i++) {
+                width |= b[index++] << (Header.BYTE_LENGTH * i);
+            }
+
+            for (int i = 0; i < sizeof(int); i++) {
+                height |= b[index++] << (Header.BYTE_LENGTH * i);
+            }
+
+            Header h = new Header {
+                width = width,
+                height = height
+            };
+
+            //Unmrle
+            List<byte> expand = new();
+            for (; index < b.Length; index++) {
+                if (b[index] == MRLE_KEY) {
+                    //next value is run length
+                    int length = b[++index];
+                    //next value is run value
+                    index++;
+                    for (int i = 0; i < length; i++) {
+                        expand.Add(b[index]);
+                    }
+                } else {
+                    expand.Add(b[index]);
+                }
+            }
 
 
+            List<float[,]> yComp = new();
+            for (int i = 0; i < width * height; i++) {
+                sbyte[] block = new sbyte[BLOCK_SIZE * BLOCK_SIZE];
+                for (int j = 0; j < block.Length; j++, i++) {
+                    block[j] = (sbyte) expand[i];
+                }
+                float[,] res = InversentMogarithm(block);
+                
+                yComp.Add(res);
+            }
 
-            return res;
+            List<float[,]> cbComp = new();
+            for (int i = 0; i < (width / 2) * (height / 2); i++) {
+                sbyte[] block = new sbyte[BLOCK_SIZE * BLOCK_SIZE];
+                for (int j = 0; j < block.Length; j++, i++) {
+                    block[j] = (sbyte) expand[i + yComp.Count];
+                }
+                float[,] res = InversentMogarithm(block);
+
+                cbComp.Add(res);
+            }
+
+            List<float[,]> crComp = new();
+            for (int i = 0; i < (width / 2) * (height / 2); i++) {
+                sbyte[] block = new sbyte[BLOCK_SIZE * BLOCK_SIZE];
+                for (int j = 0; j < block.Length; j++, i++) {
+                    block[j] = (sbyte) expand[i + yComp.Count + cbComp.Count];
+                }
+                float[,] res = InversentMogarithm(block);
+
+                crComp.Add(res);
+            }
+
+            return (h, yComp.ToArray(), cbComp.ToArray(), crComp.ToArray());
+        }
+ 
+        private static float[,] InversentMogarithm(byte[] s) {
+            return new float[8, 8]
+            {
+                {s[0], s[2], s[3], s[9], s[10], s[20], s[21], s[35]},
+                {s[1], s[4], s[8], s[11], s[19], s[22], s[34], s[36]},
+                {s[5], s[7], s[12], s[18], s[23], s[33], s[37], s[48]},
+                {s[6], s[13], s[17], s[24], s[32], s[38], s[47], s[49]},
+                {s[14], s[16], s[25], s[31], s[39], s[46], s[50], s[57]},
+                {s[15], s[26], s[30], s[40], s[45], s[51], s[56], s[58]},
+                {s[27], s[29], s[41], s[44], s[52], s[55], s[59], s[62]},
+                {s[28], s[42], s[43], s[53], s[54], s[60], s[61], s[63]}
+            };
+        }
+
+        private static float[,] InversentMogarithm(sbyte[] s) {
+            return new float[8, 8]
+            {
+                {s[0], s[2], s[3], s[9], s[10], s[20], s[21], s[35]},
+                {s[1], s[4], s[8], s[11], s[19], s[22], s[34], s[36]},
+                {s[5], s[7], s[12], s[18], s[23], s[33], s[37], s[48]},
+                {s[6], s[13], s[17], s[24], s[32], s[38], s[47], s[49]},
+                {s[14], s[16], s[25], s[31], s[39], s[46], s[50], s[57]},
+                {s[15], s[26], s[30], s[40], s[45], s[51], s[56], s[58]},
+                {s[27], s[29], s[41], s[44], s[52], s[55], s[59], s[62]},
+                {s[28], s[42], s[43], s[53], s[54], s[60], s[61], s[63]}
+            };
+        }
+
+        private static byte[] DeNoodle(byte[,] s) {
+            return new byte[64]
+                {
+                    s[0, 0], s[0, 1], s[1, 0], s[2, 0], s[1, 1], s[0, 2], s[0, 3], s[1, 2], // 0 - 7
+                    s[2, 1], s[3, 0], s[4, 0], s[3, 1], s[2, 2], s[1, 3], s[0, 4], s[0, 5], // 8 - 15
+                    s[1, 4], s[2, 3], s[3, 2], s[4, 1], s[5, 0], s[6, 0], s[5, 1], s[4, 2], // 16 - 23 
+                    s[3, 3], s[2, 4], s[1, 5], s[6, 0], s[7, 0], s[6, 1], s[5, 2], s[4, 3], // 24 - 31
+                    s[3, 4], s[2, 5], s[1, 6], s[0, 7], s[1, 7], s[2, 6], s[3, 5], s[4, 4], // 32 - 39
+                    s[5, 3], s[6, 2], s[7, 1], s[7, 2], s[6, 3], s[5, 4], s[4, 5], s[3, 6], // 40 - 47
+                    s[2, 7], s[3, 7], s[4, 6], s[5, 5], s[6, 4], s[7, 3], s[7, 4], s[6, 5], // 48 - 55
+                    s[5, 6], s[4, 7], s[5, 7], s[6, 6], s[7, 5], s[7, 6], s[6, 7], s[7, 7]  // 56 - 63
+                };
+        }
+
+        private static byte[,] TurnToBytes(float[,] arr) {
+            byte[,] b = new byte[arr.GetLength(0), arr.GetLength(1)];
+            for (int x = 0; x < b.GetLength(0); x++) {
+                for (int y = 0; y < b.GetLength(1); y++) {
+                    b[x, y] = (byte)arr[x, y];
+                }
+            }
+            return b;
         }
 
         public BitmapSource GetBitmap() {
