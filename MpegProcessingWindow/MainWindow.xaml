@@ -6,11 +6,11 @@
         xmlns:local="clr-namespace:MpegProcessingWindow"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid Name="MainGrid">
-        <Menu >
+    <DockPanel Name="MainGrid">
+        <Menu DockPanel.Dock ="Top">
             <MenuItem Header="_File" Name="FileButton">
                 <MenuItem Header="_Open" Name="OpenButton" Click="OpenButton_Click">
-                    
+
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="_Compress" Name="CompressButton" Click="CompressButton_Click"></MenuItem>
@@ -24,5 +24,5 @@
             <Image Name="OriginalImage" Grid.Column="0"></Image>
             <Image Name="ResultImage" Grid.Column="1"></Image>
         </Grid>
-    </Grid>
+    </DockPanel>
 </Window>
