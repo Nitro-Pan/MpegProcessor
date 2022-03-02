@@ -4,26 +4,42 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MpegProcessingWindow
-{
-    public class ImageMatrix
-    {
-        private const int SUBMATRIX_SIZE = 8;
+namespace MpegProcessingWindow {
+    public class ImageMatrix {
+        public const int SUBMATRIX_SIZE = 8;
         private byte[,] _yMatrix;
         private byte[,] _cbMatrix;
         private byte[,] _crMatrix;
 
-        public byte[,] YMatrix {
+        private byte[,] YMatrix {
             get { return _yMatrix; }
-            private set { _yMatrix = value; }
+            set { _yMatrix = value; }
         }
 
-        public int yhLength { get { return _yMatrix.GetLength(0); } }
+        private byte[,] CbMatrix {
+            get { return _cbMatrix; }
+            set { _cbMatrix = value; }
+        }
 
-        public int yvLength { get { return _yMatrix.GetLength(1); } }
+        private byte[,] CrMatrix {
+            get { return _crMatrix; }
+            set { _crMatrix = value; }
+        }
 
-        public int hSubMatrices { get { return _yMatrix.GetLength(1) / SUBMATRIX_SIZE; } }
-        public int vSubMatrices { get { return _yMatrix.GetLength(0) / SUBMATRIX_SIZE; } }
+        public int YhLength { get { return YMatrix.GetLength(0); } }
+        public int YvLength { get { return YMatrix.GetLength(1); } }
+        public int YhSubMatrices { get { return (int) Math.Ceiling(YhLength / (double) SUBMATRIX_SIZE); } }
+        public int YvSubMatrices { get { return (int) Math.Ceiling(YvLength / (double) SUBMATRIX_SIZE); } }
+
+        public int CbhLength { get { return CbMatrix.GetLength(0); } }
+        public int CbvLength { get { return CbMatrix.GetLength(1); } }
+        public int CbhSubMatrices { get { return (int) Math.Ceiling(CbhLength / (double) SUBMATRIX_SIZE); } }
+        public int CbvSubMatrices { get { return (int) Math.Ceiling(CbvLength / (double) SUBMATRIX_SIZE); } }
+
+        public int CrhLength { get { return CrMatrix.GetLength(0); } }
+        public int CrvLength { get { return CrMatrix.GetLength(1); } }
+        public int CrhSubMatrices { get { return (int) Math.Ceiling(CrhLength / (double) SUBMATRIX_SIZE); } }
+        public int CrvSubMatrices { get { return (int) Math.Ceiling(CrvLength / (double) SUBMATRIX_SIZE); } }
 
         public ImageMatrix(RGBAPixel[,] matrix) {
             int width = matrix.GetLength(0);
@@ -72,11 +88,13 @@ namespace MpegProcessingWindow
             _cbMatrix = alreadySubsampled ? Cb : SubsampleMatrix(Cb);
         }
 
-        public int[,] GetSubmatrix(int x, int y) {
-            int[,] subMatrix = new int[SUBMATRIX_SIZE, SUBMATRIX_SIZE];
+        public byte[,] GetYSubmatrix(int x, int y) {
+            if (x >= YhSubMatrices || y >= YvSubMatrices) throw new ArgumentOutOfRangeException("Cannot get a submatrix past the edge of this matrix");
+
+            byte[,] subMatrix = new byte[SUBMATRIX_SIZE, SUBMATRIX_SIZE];
             for (int nX = 0; nX < SUBMATRIX_SIZE; nX++) {
                 for (int nY = 0; nY < SUBMATRIX_SIZE; nY++) {
-                    if (x * SUBMATRIX_SIZE + nX >= yvLength || y * SUBMATRIX_SIZE + nY >= yhLength) {
+                    if (x * SUBMATRIX_SIZE + nX >= YhLength || y * SUBMATRIX_SIZE + nY >= YvLength) {
                         subMatrix[nX, nY] = 0;
                     } else {
                         subMatrix[nX, nY] = YMatrix[x * SUBMATRIX_SIZE + nX, y * SUBMATRIX_SIZE + nY];
@@ -86,12 +104,44 @@ namespace MpegProcessingWindow
             return subMatrix;
         }
 
+        public byte[,] GetCbSubmatrix(int x, int y) {
+            if (x >= CbhSubMatrices || y >= CbvSubMatrices) throw new ArgumentOutOfRangeException("Cannot get a submatrix past the edge of this matrix");
+
+            byte[,] subMatrix = new byte[SUBMATRIX_SIZE, SUBMATRIX_SIZE];
+            for (int nX = 0; nX < SUBMATRIX_SIZE; nX++) {
+                for (int nY = 0; nY < SUBMATRIX_SIZE; nY++) {
+                    if (x * SUBMATRIX_SIZE + nX >= CbhLength || y * SUBMATRIX_SIZE + nY >= CbvLength) {
+                        subMatrix[nX, nY] = 0;
+                    } else {
+                        subMatrix[nX, nY] = CbMatrix[x * SUBMATRIX_SIZE + nX, y * SUBMATRIX_SIZE + nY];
+                    }
+                }
+            }
+            return subMatrix;
+        }
+
+        public byte[,] GetCrSubmatrix(int x, int y) {
+            if (x >= CrhSubMatrices || y >= CrvSubMatrices) throw new ArgumentOutOfRangeException("Cannot get a submatrix past the edge of this matrix");
+
+            byte[,] subMatrix = new byte[SUBMATRIX_SIZE, SUBMATRIX_SIZE];
+            for (int nX = 0; nX < SUBMATRIX_SIZE; nX++) {
+                for (int nY = 0; nY < SUBMATRIX_SIZE; nY++) {
+                    if (x * SUBMATRIX_SIZE + nX >= CrhLength || y * SUBMATRIX_SIZE + nY >= CrvLength) {
+                        subMatrix[nX, nY] = 0;
+                    } else {
+                        subMatrix[nX, nY] = CrMatrix[x * SUBMATRIX_SIZE + nX, y * SUBMATRIX_SIZE + nY];
+                    }
+                }
+            }
+            return subMatrix;
+        }
+
         public YCbCrPixel[,] GetExpandedYCrCbImage() {
-            YCbCrPixel[,] result = new YCbCrPixel[yhLength, yvLength];
+            YCbCrPixel[,] result = new YCbCrPixel[YhLength, YvLength];
             byte[,] expandedCr = ExpandSubsampleMatrix(_crMatrix);
             byte[,] expandedCb = ExpandSubsampleMatrix(_cbMatrix);
-            for (int x = 0; x < yhLength; x++) {
-                for (int y = 0; y < yvLength; y++) {
+            for (int x = 0; x < YhLength; x++) {
+                for (int y = 0; y < YvLength; y++) {
                     result[x, y] = new(_yMatrix[x, y], expandedCb[x, y], expandedCr[x, y]);
                 }
             }
@@ -99,11 +149,11 @@ namespace MpegProcessingWindow
         }
 
         public RGBAPixel[,] GetExpandedRGBAImage() {
-            RGBAPixel[,] result = new RGBAPixel[yhLength, yvLength];
+            RGBAPixel[,] result = new RGBAPixel[YhLength, YvLength];
             byte[,] expandedCr = ExpandSubsampleMatrix(_crMatrix);
             byte[,] expandedCb = ExpandSubsampleMatrix(_cbMatrix);
-            for (int x = 0; x < yhLength; x++) {
-                for (int y = 0; y < yvLength; y++) {
+            for (int x = 0; x < YhLength; x++) {
+                for (int y = 0; y < YvLength; y++) {
                     result[x, y] = new YCbCrPixel(_yMatrix[x, y], expandedCb[x, y], expandedCr[x, y]).ToRGBA();
                 }
             }
@@ -115,7 +165,7 @@ namespace MpegProcessingWindow
         }
 
         private byte[,] SubsampleMatrix(byte[,] matrix) {
-            byte[,] subMatrix = new byte[matrix.GetLength(0) / 2 + (matrix.GetLength(0) & 1), matrix.GetLength(1) / 2 + (matrix.GetLength(1) & 1)];
+            byte[,] subMatrix = new byte[matrix.GetLength(0) / 2, matrix.GetLength(1) / 2];
             for (int x = 0; x < subMatrix.GetLength(0); x++) {
                 for (int y = 0; y < subMatrix.GetLength(1); y++) {
                     subMatrix[x, y] = matrix[x * 2, y * 2];
@@ -125,10 +175,12 @@ namespace MpegProcessingWindow
         }
 
         private byte[,] ExpandSubsampleMatrix(byte[,] matrix) {
-            byte[,] expandedMatrix = new byte[matrix.GetLength(0) * 2, matrix.GetLength(1) * 2];
+            byte[,] expandedMatrix = new byte[YMatrix.GetLength(0), YMatrix.GetLength(1)];
             for (int x = 0; x < expandedMatrix.GetLength(0); x++) {
                 for (int y = 0; y < expandedMatrix.GetLength(1); y++) {
-                    expandedMatrix[x, y] = matrix[x / 2, y / 2];
+                    int xi = x / 2 >= matrix.GetLength(0) ? (x - 1) / 2 : x / 2;
+                    int yi = y / 2 >= matrix.GetLength(1) ? (y - 1) / 2 : y / 2;
+                    expandedMatrix[x, y] = matrix[xi, yi];
                 }
             }
             return expandedMatrix;
@@ -136,8 +188,8 @@ namespace MpegProcessingWindow
 
         public override string ToString() {
             string res = "";
-            for (int x = 0; x < yhLength; x++) {
-                for (int y = 0; y < yvLength; y++) {
+            for (int x = 0; x < YhLength; x++) {
+                for (int y = 0; y < YvLength; y++) {
                     res += YMatrix[x, y] + " ";
                 }
                 res += '\n';

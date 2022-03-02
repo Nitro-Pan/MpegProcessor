@@ -16,6 +16,7 @@ namespace MpegProcessingWindow
         private MainWindow window;
         public BitmapSource srcImg { get; private set; }
         public BitmapSource resImg { get; private set; }
+        public ImageJPEG jpeg { get; set; }
 
         public MainWindowController(MainWindow window) {
             this.window = window;
@@ -23,7 +24,7 @@ namespace MpegProcessingWindow
 
         public void LoadImage(Image target) {
             OpenFileDialog files = new();
-            files.Filter = "BMP Files | *.bmp";
+            files.Filter = "All Files | *";
             if (files?.ShowDialog() ?? false) {
                 BitmapSource bmp = new BitmapImage(new(files.FileName));
                 srcImg = bmp;

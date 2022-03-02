@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MpegProcessingWindow {
     public static class DCT {
-        public static float Forwards(int u, int v, in int[,] h, int N, int M) {
+        public static float Forwards(int u, int v, in float[,] h, int N, int M) {
             float result = 0;
 
             for (int x = 0; x < N; x++) {
@@ -21,7 +21,7 @@ namespace MpegProcessingWindow {
             return result *= C(u) * C(v) * (2 / MathF.Sqrt(M * N));
         }
 
-        public static float Backwards(int x, int y, in int[,] H, int N, int M) {
+        public static float Backwards(int x, int y, in float[,] H, int N, int M) {
             float result = 0;
             for (int u = 0; u < N; u++) { 
                 for (int v = 0; v < M; v++) {

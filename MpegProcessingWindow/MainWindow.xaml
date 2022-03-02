@@ -13,6 +13,8 @@
                     
                 </MenuItem>
             </MenuItem>
+            <MenuItem Header="_Compress" Name="CompressButton" Click="CompressButton_Click"></MenuItem>
+            <MenuItem Header="_Decompress" Name="DecompressButton" Click="UncompressButton_Click"></MenuItem>
         </Menu>
         <Grid Name="ImageGrid">
             <Grid.ColumnDefinitions>

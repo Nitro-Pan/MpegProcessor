@@ -5,8 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MpegProcessingWindow {
-    public class RGBAPixel
-    {
+    public class RGBAPixel {
         public byte R { get; private set; }
         public byte G { get; private set; }
         public byte B { get; private set; }
@@ -28,9 +27,9 @@ namespace MpegProcessingWindow {
         }
 
         public YCbCrPixel ToYCrCb() {
-            byte Y = (byte) (16 + ((65.738 * R) / 256) + ((129.057 * G) / 256) + ((25.064 * B) / 256) + 0.5); // Math.Round((0.299f * R) + (0.587f * G) + (0.114f * B));
-            byte Cb = (byte) (128 - ((37.945 * R) / 256) - ((74.494 * G) / 256) + ((112.439 * B) / 256) + 0.5); // Math.Round(128 - (0.168736f * R) - (0.331264f * G) + (0.5f * B));
-            byte Cr = (byte) (128 + ((112.439 * R) / 256) - ((94.154 * G) / 256) - ((18.285 * B) / 256) + 0.5); // Math.Round(128 + (0.5f * R) - (0.418688f * G) - (0.081312f * B));
+            byte Y = (byte) ((0.299f * R) + (0.587f * G) + (0.114f * B) + 0.5f);
+            byte Cb = (byte) (128 - (0.168736f * R) - (0.331264f * G) + (0.5f * B) + 0.5f);
+            byte Cr = (byte) (128 + (0.5f * R) - (0.418688f * G) - (0.081312f * B) + 0.5f);
             return new(Y, Cb, Cr);
         }
 
@@ -39,8 +38,7 @@ namespace MpegProcessingWindow {
         }
     }
 
-    public class YCbCrPixel
-    {
+    public class YCbCrPixel {
         public byte Y { get; private set; }
         public byte Cr { get; private set; }
         public byte Cb { get; private set; }
@@ -61,9 +59,9 @@ namespace MpegProcessingWindow {
         public RGBAPixel ToRGBA() {
             int Cr = this.Cr - 128;
             int Cb = this.Cb - 128;
-            byte R = (byte) Math.Clamp(Y + 1.402f * Cr, byte.MinValue, byte.MaxValue);
-            byte G = (byte) Math.Clamp(Y - 0.344136f * Cb - 0.714136f * Cr, byte.MinValue, byte.MaxValue);
-            byte B = (byte) Math.Clamp(Y + 1.772f * Cb, byte.MinValue, byte.MaxValue);
+            byte R = (byte) Math.Clamp(Y + 1.402f * Cr + 0.5f, byte.MinValue, byte.MaxValue);
+            byte G = (byte) Math.Clamp(Y - 0.344136f * Cb - 0.714136f * Cr + 0.5f, byte.MinValue, byte.MaxValue);
+            byte B = (byte) Math.Clamp(Y + 1.772f * Cb + 0.5f, byte.MinValue, byte.MaxValue);
             return new(R, G, B);
         }
 

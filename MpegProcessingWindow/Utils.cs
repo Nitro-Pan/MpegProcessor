@@ -4,10 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MpegProcessingWindow
-{
-    internal class Utils
-    {
+namespace MpegProcessingWindow {
+    internal class Utils {
         public static int[,] CreateUniformFromSingle(in int[] input, int width, int height) { 
             int[,] res = new int[width, height];
 

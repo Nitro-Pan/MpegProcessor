@@ -30,11 +30,22 @@ namespace MpegProcessingWindow
         private void OpenButton_Click(object sender, RoutedEventArgs e) {
             c.LoadImage(OriginalImage);
             RGBAPixel[,] p = MainWindowController.ConvertToMatrix(c.srcImg);
-            Trace.WriteLine(p[0,0]);
             ImageMatrix matrix = new(p);
-            RGBAPixel[,] pp = matrix.GetExpandedRGBAImage();
-            Trace.WriteLine(pp[0,0]);
             ImageJPEG jpeg = new(matrix);
+            c.jpeg = jpeg;
+            ResultImage.Source = jpeg.GetBitmap();
+        }
+
+        private void CompressButton_Click(object sender, RoutedEventArgs e) {
+            Trace.WriteLine("Compressing...");
+            c.jpeg.Compress();
+            Trace.WriteLine("Done!");
+        }
+
+        private void UncompressButton_Click(object sender, RoutedEventArgs e) {
+            Trace.WriteLine("Uncompressing...");
+            ImageJPEG jpeg = c.jpeg.Decompress();
+            Trace.WriteLine("Done!");
             ResultImage.Source = jpeg.GetBitmap();
         }
     }
