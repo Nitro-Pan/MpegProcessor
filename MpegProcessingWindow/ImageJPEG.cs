@@ -247,7 +247,7 @@ namespace MpegProcessingWindow {
                 crUncompressed[i] = RestoreToBytes(res);
             }
 
-            (byte[,], byte[,], byte[,]) fullMatrices = BuildFullMatrices(yUncompressed, cbUncompressed, crUncompressed, yUncompressed[0].GetLength(0), yUncompressed[0].GetLength(1));
+            (byte[,], byte[,], byte[,]) fullMatrices = BuildFullMatrices(yUncompressed, cbUncompressed, crUncompressed, head.width, head.height);
 
             IsCompressed = false;
 
@@ -413,44 +413,52 @@ namespace MpegProcessingWindow {
                 }
             }
 
+            index = 0;
+            int lWBlocks = (int)Math.Ceiling(width / (float)BLOCK_SIZE);
+            int lHBlocks = (int)Math.Ceiling(height / (float)BLOCK_SIZE);
 
-            List<float[,]> yComp = new();
-            for (int i = 0; i < width * height; i++) {
+            float[][,] yComp = new float[lWBlocks * lHBlocks][,];
+            for (int i = 0; i < yComp.Length; i++) {
                 sbyte[] block = new sbyte[BLOCK_SIZE * BLOCK_SIZE];
-                for (int j = 0; j < block.Length; j++, i++) {
-                    block[j] = (sbyte) expand[i];
+                for (int j = 0; j < block.Length; j++) {
+                    block[j] = (sbyte) expand[index++];
                 }
-                float[,] res = InversentMogarithm(block);
+                float[,] res = ReNoodle(block);
                 
-                yComp.Add(res);
+                yComp[i] = res;
             }
 
-            List<float[,]> cbComp = new();
-            for (int i = 0; i < (width / 2) * (height / 2); i++) {
+            int cWidth = (width / 2);
+            int cWBlocks = (int)Math.Ceiling(cWidth / (float)BLOCK_SIZE);
+            int cHeight = (height / 2);
+            int cHBlocks = (int)Math.Ceiling(cHeight / (float)BLOCK_SIZE);
+
+            float[][,] cbComp = new float[cWBlocks * cHBlocks][,];
+            for (int i = 0; i < cbComp.Length; i++) {
                 sbyte[] block = new sbyte[BLOCK_SIZE * BLOCK_SIZE];
-                for (int j = 0; j < block.Length; j++, i++) {
-                    block[j] = (sbyte) expand[i + yComp.Count];
+                for (int j = 0; j < block.Length; j++) {
+                    block[j] = (sbyte) expand[index++];
                 }
-                float[,] res = InversentMogarithm(block);
+                float[,] res = ReNoodle(block);
 
-                cbComp.Add(res);
+                cbComp[i] = res;
             }
 
-            List<float[,]> crComp = new();
-            for (int i = 0; i < (width / 2) * (height / 2); i++) {
+            float[][,] crComp = new float[cWBlocks * cHBlocks][,];
+            for (int i = 0; i < crComp.Length; i++) {
                 sbyte[] block = new sbyte[BLOCK_SIZE * BLOCK_SIZE];
-                for (int j = 0; j < block.Length; j++, i++) {
-                    block[j] = (sbyte) expand[i + yComp.Count + cbComp.Count];
+                for (int j = 0; j < block.Length; j++) {
+                    block[j] = (sbyte) expand[index++];
                 }
-                float[,] res = InversentMogarithm(block);
+                float[,] res = ReNoodle(block);
 
-                crComp.Add(res);
+                crComp[i] = res;
             }
 
-            return (h, yComp.ToArray(), cbComp.ToArray(), crComp.ToArray());
+            return (h, yComp, cbComp, crComp);
         }
  
-        private static float[,] InversentMogarithm(byte[] s) {
+        private static float[,] ReNoodle(byte[] s) {
             return new float[8, 8]
             {
                 {s[0], s[2], s[3], s[9], s[10], s[20], s[21], s[35]},
@@ -464,7 +472,7 @@ namespace MpegProcessingWindow {
             };
         }
 
-        private static float[,] InversentMogarithm(sbyte[] s) {
+        private static float[,] ReNoodle(sbyte[] s) {
             return new float[8, 8]
             {
                 {s[0], s[2], s[3], s[9], s[10], s[20], s[21], s[35]},
@@ -481,10 +489,10 @@ namespace MpegProcessingWindow {
         private static byte[] DeNoodle(byte[,] s) {
             return new byte[64]
                 {
-                    s[0, 0], s[0, 1], s[1, 0], s[2, 0], s[1, 1], s[0, 2], s[0, 3], s[1, 2], // 0 - 7
-                    s[2, 1], s[3, 0], s[4, 0], s[3, 1], s[2, 2], s[1, 3], s[0, 4], s[0, 5], // 8 - 15
-                    s[1, 4], s[2, 3], s[3, 2], s[4, 1], s[5, 0], s[6, 0], s[5, 1], s[4, 2], // 16 - 23 
-                    s[3, 3], s[2, 4], s[1, 5], s[6, 0], s[7, 0], s[6, 1], s[5, 2], s[4, 3], // 24 - 31
+                    s[0, 0], s[1, 0], s[0, 1], s[0, 2], s[1, 1], s[2, 0], s[3, 0], s[2, 1], // 0 - 7
+                    s[1, 2], s[0, 3], s[0, 4], s[1, 3], s[2, 2], s[3, 1], s[4, 0], s[5, 0], // 8 - 15
+                    s[4, 1], s[3, 2], s[2, 3], s[1, 4], s[0, 5], s[0, 6], s[1, 5], s[2, 4], // 16 - 23 
+                    s[3, 3], s[4, 2], s[5, 1], s[6, 0], s[7, 0], s[6, 1], s[5, 2], s[4, 3], // 24 - 31
                     s[3, 4], s[2, 5], s[1, 6], s[0, 7], s[1, 7], s[2, 6], s[3, 5], s[4, 4], // 32 - 39
                     s[5, 3], s[6, 2], s[7, 1], s[7, 2], s[6, 3], s[5, 4], s[4, 5], s[3, 6], // 40 - 47
                     s[2, 7], s[3, 7], s[4, 6], s[5, 5], s[6, 4], s[7, 3], s[7, 4], s[6, 5], // 48 - 55
