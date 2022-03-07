@@ -24,6 +24,10 @@ namespace MpegProcessingWindow
     public partial class MainWindow : Window
     {
         MainWindowController c;
+
+        IFrame first;
+        PFrame second;
+
         public MainWindow() {
             InitializeComponent();
             c = new(this);
@@ -68,6 +72,39 @@ namespace MpegProcessingWindow
                 ImageJPEG jpeg = new(stream);
                 jpeg = jpeg.Decompress();
                 ResultImage.Source = jpeg.GetBitmap();
+            }
+        }
+
+        private void LoadFrame1_Click(object sender, RoutedEventArgs e) {
+            OpenFileDialog files = new();
+            files.Filter = "All Files | *";
+            if (files?.ShowDialog() ?? false) {
+                BitmapSource bmp = new BitmapImage(new(files.FileName));
+                ImageMatrix i = new(MainWindowController.ConvertToMatrix(bmp));
+                first = new(new(i));
+                Image im = new();
+                im.Source = first.GetBitmap();
+                im.Width = Frame0Canvas.Width;
+                Frame0Canvas.Children.Add(im);
+            }
+        }
+
+        private void LoadFrame2_Click(object sender, RoutedEventArgs e) {
+            OpenFileDialog files = new();
+            files.Filter = "All Files | *.*";
+            if (files?.ShowDialog() ?? false) {
+                BitmapSource bmp = new BitmapImage(new(files.FileName));
+                ImageMatrix i = new(MainWindowController.ConvertToMatrix(bmp));
+                second = new(i, first);
+                Image im = new();
+                im.Source = second.GetBitmap();
+                im.Width = Frame1Canvas.Width;
+                Frame1Canvas.Children.Add(im);
+                Line[] lines = second.GetLines();
+                foreach (Line l in lines) {
+                    Frame1Canvas.Children.Add(l);
+                }
+                ResultImage.Source = second.GetBitmap();
             }
         }
     }

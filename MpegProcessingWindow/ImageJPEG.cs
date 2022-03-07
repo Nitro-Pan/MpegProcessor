@@ -9,7 +9,7 @@ using System.Windows.Media.Imaging;
 
 namespace MpegProcessingWindow {
     internal class ImageJPEG {
-        private readonly ImageMatrix matrix;
+        public readonly ImageMatrix matrix;
         private int Width { get { return matrix.YhLength; } }
         private int Height { get { return matrix.YvLength; } }
         public bool IsCompressed { get; private set; }

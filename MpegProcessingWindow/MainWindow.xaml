@@ -17,14 +17,22 @@
             <MenuItem Header="_Decompress" Name="DecompressButton" Click="UncompressButton_Click"></MenuItem>
             <MenuItem Header="_Open Compressed" Name="OpenCompressButton" Click="OpenCompressedButton_Click"></MenuItem>
             <MenuItem Header="_Save" Name="SaveButton" Click="SaveButton_Click"></MenuItem>
+            <MenuItem Header="_Load Frame 1" Name="LoadF1Button" Click="LoadFrame1_Click"></MenuItem>
+            <MenuItem Header="_Load Frame 2" Name="LoadF2Button" Click="LoadFrame2_Click"></MenuItem>
         </Menu>
         <Grid Name="ImageGrid">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <Image Name="OriginalImage" Grid.Column="0"></Image>
-            <Image Name="ResultImage" Grid.Column="1"></Image>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <Image Name="OriginalImage" Grid.Column="0" Grid.Row="0"></Image>
+            <Image Name="ResultImage" Grid.Column="1" Grid.Row="0"></Image>
+            <StackPanel Name="Frame0Canvas" Grid.Column="0" Grid.Row="1"></StackPanel>
+            <Canvas Name="Frame1Canvas" Grid.Column="0" Grid.Row="0"></Canvas>
         </Grid>
     </DockPanel>
 </Window>
