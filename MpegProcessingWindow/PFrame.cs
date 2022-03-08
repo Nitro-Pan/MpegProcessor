@@ -12,6 +12,7 @@ namespace MpegProcessingWindow {
     internal class PFrame : MPEGFrame {
         private ImageMatrix targetFrame;
         private ImageMatrix calculatedFrame;
+        private ImageMatrix diffFrame;
         private IntVector2[,] yVectors;
         private IntVector2[,] cbVectors;
         private IntVector2[,] crVectors;
@@ -26,6 +27,7 @@ namespace MpegProcessingWindow {
             cbVectors = vectors.Item2;
             crVectors = vectors.Item3;
             calculatedFrame = CalculateNewFrame();
+            diffFrame = CalculateDiffFrame();
         }
 
         private (IntVector2[,], IntVector2[,], IntVector2[,]) CalculateVectors() {
@@ -166,12 +168,72 @@ namespace MpegProcessingWindow {
             return new ImageMatrix(compY, compCb, compCr);
         }
 
+        private ImageMatrix CalculateDiffFrame() {
+            if (PrevFrame == null) throw new InvalidOperationException();
+
+            var calcMatrices = calculatedFrame.GetSubsampledImage();
+            var thisMatrices = ThisFrame.GetSubsampledImage();
+
+            byte[,] yM = new byte[calcMatrices.Item1.GetLength(0), calcMatrices.Item1.GetLength(1)];
+            byte[,] cbM = new byte[calcMatrices.Item2.GetLength(0), calcMatrices.Item2.GetLength(1)];
+            byte[,] crM = new byte[calcMatrices.Item3.GetLength(0), calcMatrices.Item3.GetLength(1)];
+
+            for (int x = 0; x < yM.GetLength(0); x++) {
+                for (int y = 0; y < yM.GetLength(1); y++) {
+                    yM[x, y] = (byte) (thisMatrices.Item1[x, y] - calcMatrices.Item1[x, y]);
+                }
+            }
+
+            for (int x = 0; x < cbM.GetLength(0); x++) {
+                for (int y = 0; y < cbM.GetLength(1); y++) {
+                    cbM[x, y] = (byte)(thisMatrices.Item2[x, y] - calcMatrices.Item2[x, y]);
+                }
+            }
+
+            for (int x = 0; x < crM.GetLength(0); x++) {
+                for (int y = 0; y < crM.GetLength(1); y++) {
+                    crM[x, y] = (byte)(thisMatrices.Item3[x, y] - calcMatrices.Item3[x, y]);
+                }
+            }
+
+            return new ImageMatrix(yM, cbM, crM);
+        }
+
+        private ImageMatrix ConstructOriginalFrame() {
+            var diffMatrices = diffFrame.GetSubsampledImage();
+            var lastMatrices = PrevFrame.GetMatrix().GetSubsampledImage();
+
+            byte[,] yM = new byte[diffMatrices.Item1.GetLength(0), diffMatrices.Item1.GetLength(1)];
+            byte[,] cbM = new byte[diffMatrices.Item2.GetLength(0), diffMatrices.Item2.GetLength(1)];
+            byte[,] crM = new byte[diffMatrices.Item3.GetLength(0), diffMatrices.Item3.GetLength(1)];
+
+            for (int x = 0; x < yM.GetLength(0); x++) {
+                for (int y = 0; y < yM.GetLength(1); y++) {
+                    yM[x, y] = (byte)(lastMatrices.Item1[x, y] + diffMatrices.Item1[x, y]);
+                }
+            }
+
+            for (int x = 0; x < cbM.GetLength(0); x++) {
+                for (int y = 0; y < cbM.GetLength(1); y++) {
+                    cbM[x, y] = (byte)(lastMatrices.Item2[x, y] + diffMatrices.Item2[x, y]);
+                }
+            }
+
+            for (int x = 0; x < crM.GetLength(0); x++) {
+                for (int y = 0; y < crM.GetLength(1); y++) {
+                    crM[x, y] = (byte)(lastMatrices.Item3[x, y] + diffMatrices.Item3[x, y]);
+                }
+            }
+
+            return new ImageMatrix(yM, cbM, crM);
+        }
+        
         public Line[] GetLines() {
             Line[] lines = new Line[yVectors.GetLength(0) * yVectors.GetLength(1) + cbVectors.GetLength(0) * cbVectors.GetLength(1) + crVectors.GetLength(0) * crVectors.GetLength(1)];
 
             for (int x = 0; x < yVectors.GetLength(0); x++) {
                 for (int y = 0; y < yVectors.GetLength(1); y++) {
-                    Line l = new Line() {
+                    Line l = new() {
                         X1 = x * MACROBLOCK_SIZE,
                         Y1 = y * MACROBLOCK_SIZE,
                         X2 = x * MACROBLOCK_SIZE + yVectors[x, y].X + 1,
@@ -187,7 +249,7 @@ namespace MpegProcessingWindow {
 
             for (int x = 0; x < cbVectors.GetLength(0); x++) {
                 for (int y = 0; y < cbVectors.GetLength(1); y++) {
-                    Line l = new Line() {
+                    Line l = new() {
                         X1 = x * MACROBLOCK_SIZE,
                         Y1 = y * MACROBLOCK_SIZE,
                         X2 = x * MACROBLOCK_SIZE + cbVectors[x, y].X + 1,
@@ -203,7 +265,7 @@ namespace MpegProcessingWindow {
 
             for (int x = 0; x < crVectors.GetLength(0); x++) {
                 for (int y = 0; y < crVectors.GetLength(1); y++) {
-                    Line l = new Line() {
+                    Line l = new() {
                         X1 = x * MACROBLOCK_SIZE,
                         Y1 = y * MACROBLOCK_SIZE,
                         X2 = x * MACROBLOCK_SIZE + crVectors[x, y].X + 1,
@@ -219,11 +281,11 @@ namespace MpegProcessingWindow {
         }
 
         public override ImageMatrix GetMatrix() { 
-            return calculatedFrame;
+            return ConstructOriginalFrame();
         }
 
         public override BitmapSource GetBitmap() {
-            ImageJPEG j = new(calculatedFrame);
+            ImageJPEG j = new(ConstructOriginalFrame());
             return j.GetBitmap();
         }
     }
