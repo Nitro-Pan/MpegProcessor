@@ -63,15 +63,15 @@ namespace MpegProcessingWindow {
 
         private IntVector2 FindClosestMatch(byte[,] prev, byte[,][,] curr, int x, int y, int r, int macroBlockSize) {
             IntVector2 offset = new();
-            int bestMAD = MAD(CreateSingleMacro(prev, x * MACROBLOCK_SIZE, y * MACROBLOCK_SIZE, macroBlockSize), curr[x, y]);
+            int bestMAD = MAD(CreateSingleMacro(prev, x * macroBlockSize, y * macroBlockSize, macroBlockSize), curr[x, y]);
 
             if (bestMAD == 0) return offset;
 
             for (int u = -r; u < r; u++) {
                 for (int v = -r; v < r; v++) {
                     if (x + u < 0 || x + u >= prev.GetLength(0) || y + v < 0 || y + v >= prev.GetLength(1)) continue;
-                    if (MAD(CreateSingleMacro(prev, x * MACROBLOCK_SIZE + u, y * MACROBLOCK_SIZE + v, macroBlockSize), curr[x, y]) < bestMAD) {
-                        bestMAD = MAD(CreateSingleMacro(prev, x * MACROBLOCK_SIZE + u, y * MACROBLOCK_SIZE + v, macroBlockSize), curr[x, y]);
+                    if (MAD(CreateSingleMacro(prev, x * macroBlockSize + u, y * macroBlockSize + v, macroBlockSize), curr[x, y]) < bestMAD) {
+                        bestMAD = MAD(CreateSingleMacro(prev, x * macroBlockSize + u, y * macroBlockSize + v, macroBlockSize), curr[x, y]);
                         offset = new IntVector2() { X = u, Y = v };
                     }
                 }
@@ -124,15 +124,15 @@ namespace MpegProcessingWindow {
 
             for (int x = 0; x < newCb.GetLength(0); x++) {
                 for (int y = 0; y < newCb.GetLength(1); y++) {
-                    IntVector2 offset = yVectors[x, y];
-                    newCb[x, y] = CreateSingleMacro(cbM, x * MACROBLOCK_SIZE + offset.X, y * MACROBLOCK_SIZE + offset.Y, MACROBLOCK_SIZE);
+                    IntVector2 offset = cbVectors[x, y];
+                    newCb[x, y] = CreateSingleMacro(cbM, x * MACROBLOCK_SIZE / 2 + offset.X, y * MACROBLOCK_SIZE / 2 + offset.Y, MACROBLOCK_SIZE / 2);
                 }
             }
 
             for (int x = 0; x < newCr.GetLength(0); x++) {
                 for (int y = 0; y < newCr.GetLength(1); y++) {
-                    IntVector2 offset = yVectors[x, y];
-                    newCr[x, y] = CreateSingleMacro(crM, x * MACROBLOCK_SIZE + offset.X, y * MACROBLOCK_SIZE + offset.Y, MACROBLOCK_SIZE);
+                    IntVector2 offset = crVectors[x, y];
+                    newCr[x, y] = CreateSingleMacro(crM, x * MACROBLOCK_SIZE / 2 + offset.X, y * MACROBLOCK_SIZE / 2 + offset.Y, MACROBLOCK_SIZE / 2);
                 }
             }
 

@@ -8,7 +8,7 @@ using System.Windows.Media.Imaging;
 namespace MpegProcessingWindow {
     internal abstract class MPEGFrame {
         public const int MACROBLOCK_SIZE = 16;
-        public const int SEARCH_RADIUS = 15;
+        public const int SEARCH_RADIUS = 50;
         public MPEGFrame? PrevFrame { get; protected set; }
         public ImageMatrix ThisFrame { get; protected set; }
         public MPEGFrame? NextFrame { get; protected set; }
