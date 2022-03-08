@@ -94,6 +94,7 @@ namespace MpegProcessingWindow
             files.Filter = "All Files | *.*";
             if (files?.ShowDialog() ?? false) {
                 BitmapSource bmp = new BitmapImage(new(files.FileName));
+                OriginalImage.Source = bmp;
                 ImageMatrix i = new(MainWindowController.ConvertToMatrix(bmp));
                 second = new(i, first);
                 Image im = new();
