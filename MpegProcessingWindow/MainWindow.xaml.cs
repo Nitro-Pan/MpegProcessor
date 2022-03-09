@@ -81,7 +81,7 @@ namespace MpegProcessingWindow
             if (files?.ShowDialog() ?? false) {
                 BitmapSource bmp = new BitmapImage(new(files.FileName));
                 ImageMatrix i = new(MainWindowController.ConvertToMatrix(bmp));
-                first = new(new(i));
+                first = new IFrame(new ImageJPEG(i));
                 Image im = new();
                 im.Source = first.GetBitmap();
                 im.Width = Frame0Canvas.Width;
@@ -97,6 +97,8 @@ namespace MpegProcessingWindow
                 OriginalImage.Source = bmp;
                 ImageMatrix i = new(MainWindowController.ConvertToMatrix(bmp));
                 second = new(i, first);
+                second.Compress();
+                second.Decompress();
                 Image im = new();
                 im.Source = second.GetBitmap();
                 im.Width = Frame1Canvas.Width;
@@ -106,6 +108,27 @@ namespace MpegProcessingWindow
                     Frame1Canvas.Children.Add(l);
                 }
                 ResultImage.Source = second.GetBitmap();
+            }
+        }
+
+        private void SaveMpeg_Click(object sender, RoutedEventArgs e) {
+            byte[] mpegStream = second.GetCompressedBytes(Array.Empty<byte>());
+            SaveFileDialog files = new();
+            files.Filter = "Noodlm Files | *.noodlm";
+            if (files?.ShowDialog() ?? false) {
+                File.WriteAllBytes(files.FileName, mpegStream);
+            }
+        }
+
+        private void OpenMpeg_Click(object sender, RoutedEventArgs e) {
+            OpenFileDialog files = new();
+            files.Filter = "Noodlm Files | *.noodlm";
+            if (files?.ShowDialog() ?? false) { 
+                byte[] stream = File.ReadAllBytes(files.FileName);
+                CompressionTrain train = new(stream);
+                var bmps = train.GetAllBitmaps();
+                OriginalImage.Source = bmps[0];
+                ResultImage.Source = bmps[1];
             }
         }
     }

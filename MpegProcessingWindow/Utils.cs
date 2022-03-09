@@ -16,6 +16,14 @@ namespace MpegProcessingWindow {
             }
 
             return res;
-        }   
+        }
+
+        public static byte[] IntToByteBE(int n) {
+            byte[] b = new byte[sizeof(int)];
+            for (int i = 0; i < b.Length; i++) {
+                b[i] = (byte) ((n >> (i * 8)) & 255);
+            }
+            return b;
+        }
     }
 }

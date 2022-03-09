@@ -21,7 +21,7 @@ namespace MpegProcessingWindow {
         private float[][,] cbCompressed;
         private float[][,] crCompressed;
 
-        private Header head;
+        public Header head;
 
         private byte[] byteStream;
 
@@ -49,7 +49,7 @@ namespace MpegProcessingWindow {
             {99, 99, 99, 99, 99, 99, 99, 99}
         };
 
-        private struct Header {
+        public struct Header {
             public int width;
             public int height;
             public const int BYTE_LENGTH = 8;
@@ -81,6 +81,15 @@ namespace MpegProcessingWindow {
 
         public ImageJPEG(byte[] b) {
             var compressed = ReadByteStream(b);
+            head = compressed.Item1;
+            yCompressed = compressed.Item2;
+            cbCompressed = compressed.Item3;
+            crCompressed = compressed.Item4;
+            IsCompressed = true;
+        }
+
+        public ImageJPEG(byte[] b, int width, int height) {
+            var compressed = ReadByteStream(b, width, height);
             head = compressed.Item1;
             yCompressed = compressed.Item2;
             cbCompressed = compressed.Item3;
@@ -379,7 +388,7 @@ namespace MpegProcessingWindow {
             return compressed.ToArray();
         }
 
-        private (Header, float[][,], float[][,], float[][,]) ReadByteStream(byte[] b) {
+        public static (Header, float[][,], float[][,], float[][,]) ReadByteStream(byte[] b) {
             int width = 0;
             int height = 0;
             int index = 0;
@@ -457,7 +466,76 @@ namespace MpegProcessingWindow {
 
             return (h, yComp, cbComp, crComp);
         }
- 
+
+        public static (Header, float[][,], float[][,], float[][,]) ReadByteStream(byte[] b, int width, int height) {
+            int index = 0;
+
+            Header h = new Header {
+                width = width,
+                height = height
+            };
+
+            //Unmrle
+            List<byte> expand = new();
+            for (; index < b.Length; index++) {
+                if (b[index] == MRLE_KEY) {
+                    //next value is run length
+                    int length = b[++index];
+                    //next value is run value
+                    index++;
+                    for (int i = 0; i < length; i++) {
+                        expand.Add(b[index]);
+                    }
+                } else {
+                    expand.Add(b[index]);
+                }
+            }
+
+            index = 0;
+            int lWBlocks = (int)Math.Ceiling(width / (float)BLOCK_SIZE);
+            int lHBlocks = (int)Math.Ceiling(height / (float)BLOCK_SIZE);
+
+            float[][,] yComp = new float[lWBlocks * lHBlocks][,];
+            for (int i = 0; i < yComp.Length; i++) {
+                sbyte[] block = new sbyte[BLOCK_SIZE * BLOCK_SIZE];
+                for (int j = 0; j < block.Length; j++) {
+                    block[j] = (sbyte)expand[index++];
+                }
+                float[,] res = ReNoodle(block);
+
+                yComp[i] = res;
+            }
+
+            int cWidth = (width / 2);
+            int cWBlocks = (int)Math.Ceiling(cWidth / (float)BLOCK_SIZE);
+            int cHeight = (height / 2);
+            int cHBlocks = (int)Math.Ceiling(cHeight / (float)BLOCK_SIZE);
+
+            float[][,] cbComp = new float[cWBlocks * cHBlocks][,];
+            for (int i = 0; i < cbComp.Length; i++) {
+                sbyte[] block = new sbyte[BLOCK_SIZE * BLOCK_SIZE];
+                for (int j = 0; j < block.Length; j++) {
+                    block[j] = (sbyte)expand[index++];
+                }
+                float[,] res = ReNoodle(block);
+
+                cbComp[i] = res;
+            }
+
+            float[][,] crComp = new float[cWBlocks * cHBlocks][,];
+            for (int i = 0; i < crComp.Length; i++) {
+                sbyte[] block = new sbyte[BLOCK_SIZE * BLOCK_SIZE];
+                for (int j = 0; j < block.Length; j++) {
+                    block[j] = (sbyte)expand[index++];
+                }
+                float[,] res = ReNoodle(block);
+
+                crComp[i] = res;
+            }
+
+            return (h, yComp, cbComp, crComp);
+        }
+
         private static float[,] ReNoodle(byte[] s) {
             return new float[8, 8]
             {
