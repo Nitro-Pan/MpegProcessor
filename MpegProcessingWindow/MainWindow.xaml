@@ -21,6 +21,7 @@
             <MenuItem Header="_Load Frame 2" Name="LoadF2Button" Click="LoadFrame2_Click"></MenuItem>
             <MenuItem Header="_Save MPEG" Name="SaveMpegButton" Click="SaveMpeg_Click"></MenuItem>
             <MenuItem Header="_Open MPEG" Name="OpenMpegButton" Click="OpenMpeg_Click"></MenuItem>
+            <MenuItem Header="_Playback" Name="Playback" Click="Playback_Click"></MenuItem>
         </Menu>
         <Grid Name="ImageGrid">
             <Grid.ColumnDefinitions>

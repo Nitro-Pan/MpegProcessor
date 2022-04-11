@@ -25,8 +25,9 @@ namespace MpegProcessingWindow
     {
         MainWindowController c;
 
-        IFrame first;
-        PFrame second;
+        private List<MPEGFrame> frames = new List<MPEGFrame>();
+        // private IFrame first;
+        // private PFrame second;
 
         public MainWindow() {
             InitializeComponent();
@@ -81,9 +82,9 @@ namespace MpegProcessingWindow
             if (files?.ShowDialog() ?? false) {
                 BitmapSource bmp = new BitmapImage(new(files.FileName));
                 ImageMatrix i = new(MainWindowController.ConvertToMatrix(bmp));
-                first = new IFrame(new ImageJPEG(i));
+                frames.Add(new IFrame(new ImageJPEG(i)));
                 Image im = new();
-                im.Source = first.GetBitmap();
+                im.Source = frames[^1].GetBitmap();
                 im.Width = Frame0Canvas.Width;
                 Frame0Canvas.Children.Add(im);
             }
@@ -96,23 +97,23 @@ namespace MpegProcessingWindow
                 BitmapSource bmp = new BitmapImage(new(files.FileName));
                 OriginalImage.Source = bmp;
                 ImageMatrix i = new(MainWindowController.ConvertToMatrix(bmp));
-                second = new(i, first);
-                second.Compress();
-                second.Decompress();
+                frames.Add(new PFrame(i, frames[^1]));
+                (frames[^1] as PFrame)?.Compress();
+                (frames[^1] as PFrame)?.Decompress();
                 Image im = new();
-                im.Source = second.GetBitmap();
+                im.Source = frames[^1].GetBitmap();
                 im.Width = Frame1Canvas.Width;
                 Frame1Canvas.Children.Add(im);
-                Line[] lines = second.GetLines();
+                Line[] lines = (frames[^1] as PFrame).GetLines();
                 foreach (Line l in lines) {
                     Frame1Canvas.Children.Add(l);
                 }
-                ResultImage.Source = second.GetBitmap();
+                ResultImage.Source = frames[^1].GetBitmap();
             }
         }
 
         private void SaveMpeg_Click(object sender, RoutedEventArgs e) {
-            byte[] mpegStream = second.GetCompressedBytes(Array.Empty<byte>());
+            byte[] mpegStream = frames[^1].GetCompressedBytes(Array.Empty<byte>(), 0);
             SaveFileDialog files = new();
             files.Filter = "Noodlm Files | *.noodlm";
             if (files?.ShowDialog() ?? false) {
@@ -127,9 +128,16 @@ namespace MpegProcessingWindow
                 byte[] stream = File.ReadAllBytes(files.FileName);
                 CompressionTrain train = new(stream);
                 var bmps = train.GetAllBitmaps();
-                OriginalImage.Source = bmps[0];
-                ResultImage.Source = bmps[1];
+                frames.Clear();
+                foreach (var frame in train.frames) {
+                    frames.Add(frame);
+                }
             }
+        }
+
+        private void Playback_Click(object sender, RoutedEventArgs e) {
+            Playback pb = new Playback(frames);
+            pb.Show();
         }
     }
 }

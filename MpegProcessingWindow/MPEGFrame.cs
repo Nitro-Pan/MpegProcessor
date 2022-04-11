@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 
 namespace MpegProcessingWindow {
-    internal abstract class MPEGFrame {
+    public abstract class MPEGFrame {
         public const int MACROBLOCK_SIZE = 16;
         public const int SEARCH_RADIUS = 15;
         public const int BLOCK_SIZE = 8;
